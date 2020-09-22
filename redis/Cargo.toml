@@ -7,7 +7,7 @@ version = "0.1.0"
 
 [dependencies]
 bb8-redis = "0.5"
-rarity-cache = { default-features = false, path = "../base" }
+rarity-cache = { path = "../base" }
 twilight-model = { default-features = false, version = "0.1" }
 serde = { default-features = false, version = "1.0" }
 serde_cbor = { default-features = false, features = ["std"], version = "0.11" }
