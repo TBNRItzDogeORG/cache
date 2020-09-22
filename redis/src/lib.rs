@@ -144,7 +144,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
             let conn = conn.as_mut().unwrap();
             let bytes: Vec<u8> = conn.get(T::key(entity_id)).await?;
 
-            Ok(Some(serde_cbor::from_slice::<T>(&bytes).unwrap()))
+            Ok(Some(serde_cbor::from_slice::<T>(dbg!(&bytes)).unwrap()))
         })
     }
 
