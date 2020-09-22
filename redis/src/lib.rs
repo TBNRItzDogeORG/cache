@@ -1,6 +1,6 @@
 use bb8_redis::{
     bb8::{Pool, RunError},
-    redis::{cmd, IntoConnectionInfo, RedisError as OriginalRedisError},
+    redis::{AsyncCommands, IntoConnectionInfo, RedisError as OriginalRedisError},
     RedisConnectionManager, RedisPool,
 };
 use rarity_cache::{
@@ -142,7 +142,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
         Box::pin(async move {
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
-            let bytes: Vec<u8> = cmd("GET").arg(T::key(entity_id)).query_async(conn).await?;
+            let bytes: Vec<u8> = conn.get(T::key(entity_id)).await?;
 
             Ok(Some(serde_cbor::from_slice::<T>(&bytes).unwrap()))
         })
@@ -156,7 +156,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
         Box::pin(async move {
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
-            cmd("DEL").arg(T::key(entity_id)).query_async(conn).await?;
+            conn.del(T::key(entity_id)).await?;
 
             Ok(())
         })
@@ -167,11 +167,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
             let bytes = serde_cbor::to_vec(&entity).unwrap();
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
-            cmd("SET")
-                .arg(T::key(entity.id()))
-                .arg(bytes)
-                .query_async(conn)
-                .await?;
+            conn.set(T::key(entity.id()), bytes).await?;
 
             Ok(())
         })
