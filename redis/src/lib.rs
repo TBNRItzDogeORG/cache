@@ -25,7 +25,10 @@ use rarity_cache::{
         voice::{VoiceStateEntity, VoiceStateRepository},
         Entity,
     },
-    repository::{GetEntityFuture, ListEntitiesFuture, RemoveEntityFuture, UpsertEntityFuture},
+    repository::{
+        GetEntityFuture, ListEntitiesFuture, RemoveEntitiesFuture, RemoveEntityFuture,
+        UpsertEntitiesFuture, UpsertEntityFuture,
+    },
     Backend, Cache, Repository,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -166,12 +169,42 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
         })
     }
 
+    fn remove_bulk<I: Iterator<Item = T::Id>>(
+        &self,
+        entity_ids: I,
+    ) -> RemoveEntitiesFuture<'_, RedisError> {
+        let items: Vec<Vec<u8>> = entity_ids.map(T::key).collect();
+        Box::pin(async move {
+            let mut conn = (self.0).0.get().await?;
+            let conn = conn.as_mut().unwrap();
+            conn.del(items).await?;
+
+            Ok(())
+        })
+    }
+
     fn upsert(&self, entity: T) -> UpsertEntityFuture<'_, RedisError> {
         Box::pin(async move {
             let bytes = serde_cbor::to_vec(&entity).unwrap();
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
             conn.set(T::key(entity.id()), bytes).await?;
+
+            Ok(())
+        })
+    }
+
+    fn upsert_bulk<I: Iterator<Item = T> + Send>(
+        &self,
+        entities: I,
+    ) -> UpsertEntitiesFuture<'_, RedisError> {
+        let pairs: Vec<(Vec<u8>, Vec<u8>)> = entities
+            .map(|e| (T::key(e.id()), serde_cbor::to_vec(&e).unwrap()))
+            .collect();
+        Box::pin(async move {
+            let mut conn = (self.0).0.get().await?;
+            let conn = conn.as_mut().unwrap();
+            conn.set_multiple(&pairs).await?;
 
             Ok(())
         })
