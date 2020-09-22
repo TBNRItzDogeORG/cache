@@ -33,6 +33,7 @@ use rarity_cache::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::marker::PhantomData;
+use std::sync::Arc;
 use twilight_model::id::{AttachmentId, ChannelId, EmojiId, GuildId, MessageId, RoleId, UserId};
 
 pub type RedisCache = Cache<RedisBackend>;
@@ -311,12 +312,12 @@ impl UserRepository<RedisBackend> for RedisRepository<UserEntity> {
 ///
 /// [Redis]: https://docs.rs/redis
 #[derive(Clone)]
-pub struct RedisBackend(RedisPool);
+pub struct RedisBackend(Arc<RedisPool>);
 
 impl RedisBackend {
     /// Create a new `rarity-cache` Redis backend with a provided instance.
     pub fn new(redis: RedisPool) -> Self {
-        Self(redis)
+        Self(Arc::new(redis))
     }
 
     /// Shortcut for `RedisPool::new` and [`new`].
@@ -325,7 +326,7 @@ impl RedisBackend {
     pub async fn from_uri<T: IntoConnectionInfo>(uri: T) -> Self {
         let manager = RedisConnectionManager::new(uri).unwrap();
         let pool = RedisPool::new(Pool::builder().build(manager).await.unwrap());
-        Self(pool)
+        Self(Arc::new(pool))
     }
 
     fn repo<T>(&self) -> RedisRepository<T> {
