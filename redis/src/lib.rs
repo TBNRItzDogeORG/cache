@@ -33,9 +33,9 @@ use rarity_cache::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(not(feature = "simd-json"))]
-pub use serde_json::{from_slice, to_vec};
+use serde_json::{from_slice, to_vec};
 #[cfg(feature = "simd-json")]
-pub use simd_json::{from_slice, to_vec};
+use simd_json::{from_slice, to_vec};
 use std::marker::PhantomData;
 use twilight_model::id::{AttachmentId, ChannelId, EmojiId, GuildId, MessageId, RoleId, UserId};
 
