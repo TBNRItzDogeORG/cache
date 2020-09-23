@@ -32,6 +32,10 @@ use rarity_cache::{
     Backend, Cache, Repository,
 };
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(not(feature = "simd-json"))]
+pub use serde_json::{from_slice, from_str, to_string, to_vec, Error as JsonError};
+#[cfg(feature = "simd-json")]
+pub use simd_json::{from_slice, from_str, to_string, to_vec, Error as JsonError};
 use std::marker::PhantomData;
 use twilight_model::id::{AttachmentId, ChannelId, EmojiId, GuildId, MessageId, RoleId, UserId};
 
@@ -150,7 +154,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
             if bytes.is_empty() {
                 Ok(None)
             } else {
-                Ok(Some(serde_cbor::from_slice::<T>(&bytes).unwrap()))
+                Ok(Some(from_slice::<T>(&bytes).unwrap()))
             }
         })
     }
@@ -185,7 +189,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
 
     fn upsert(&self, entity: T) -> UpsertEntityFuture<'_, RedisError> {
         Box::pin(async move {
-            let bytes = serde_cbor::to_vec(&entity).unwrap();
+            let bytes = to_vec(&entity).unwrap();
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
             conn.set(T::key(entity.id()), bytes).await?;
@@ -199,7 +203,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
         entities: I,
     ) -> UpsertEntitiesFuture<'_, RedisError> {
         let pairs: Vec<(Vec<u8>, Vec<u8>)> = entities
-            .map(|e| (T::key(e.id()), serde_cbor::to_vec(&e).unwrap()))
+            .map(|e| (T::key(e.id()), to_vec(&e).unwrap()))
             .collect();
         Box::pin(async move {
             let mut conn = (self.0).0.get().await?;
