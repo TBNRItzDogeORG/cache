@@ -154,7 +154,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
             if bytes.is_empty() {
                 Ok(None)
             } else {
-                Ok(Some(from_slice::<T>(&bytes).unwrap()))
+                Ok(Some(from_slice::<T>(&mut bytes).unwrap()))
             }
         })
     }
