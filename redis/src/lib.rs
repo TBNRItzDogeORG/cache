@@ -149,7 +149,7 @@ impl<T: DeserializeOwned + Serialize + RedisEntity + Sync> Repository<T, RedisBa
         Box::pin(async move {
             let mut conn = (self.0).0.get().await?;
             let conn = conn.as_mut().unwrap();
-            let bytes: Vec<u8> = conn.get(T::key(entity_id)).await?;
+            let mut bytes: Vec<u8> = conn.get(T::key(entity_id)).await?;
 
             if bytes.is_empty() {
                 Ok(None)
