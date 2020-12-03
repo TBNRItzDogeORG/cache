@@ -8,7 +8,7 @@ version = "0.1.0"
 [dependencies]
 bb8-redis = "0.5"
 rarity-cache = { path = "../base" }
-twilight-model = { default-features = false, version = "0.1" }
+twilight-model = {git = "https://github.com/Erk-/twilight", branch = "feature/arbitary-close-code"}
 serde = { default-features = false, version = "1.0" }
 serde_json = { default-features = false, features = ["std"], version = "1.0" }
 simd-json = { default-features = false, features = ["serde_impl"], optional = true, version = "0.3" }
